@@ -1,30 +1,59 @@
 package main
 
 import (
+	"context"
+	"fmt"
+
 	"google.golang.org/grpc"
 
 	acl "github.com/ory/keto/proto/ory/keto/acl/v1alpha1"
 )
 
 func main() {
-	conn, err := grpc.Dial("127.0.0.1:4467", grpc.WithInsecure())
+	conn, err := grpc.Dial("bold-dubinsky-wgsl9ep42v.projects.oryapis.com:443")
 	if err != nil {
 		panic("Encountered error: " + err.Error())
 	}
 
-	writeClient := acl.NewWriteServiceClient(conn)
+	client := acl.NewWriteServiceClient(conn)
 
-	// _, err = client.TransactRelationTuples(context.Background() ...
-	conn, err = grpc.Dial("127.0.0.1:4466", grpc.WithInsecure())
+	_, err = client.TransactRelationTuples(context.Background(), &acl.TransactRelationTuplesRequest{
+		RelationTupleDeltas: []*acl.RelationTupleDelta{
+			{
+				Action: acl.RelationTupleDelta_INSERT,
+				RelationTuple: &acl.RelationTuple{
+					Namespace: "blog_posts",
+					Object:    "my-first-blog-post",
+					Relation:  "read",
+					Subject: &acl.Subject{Ref: &acl.Subject_Id{
+						Id: "alice",
+					}},
+				},
+			},
+		},
+	})
+	if err != nil {
+		panic("Encountered error: " + err.Error())
+	}
 
-	readClient := acl.NewReadServiceClient(conn)
-	// _, err = readClient.ListRelationTuples(context.Background()...
+	fmt.Println("Successfully created tuple")
+	readConn, err := grpc.Dial("bold-dubinsky-wgsl9ep42v.projects.oryapis.com:443")
+	if err != nil {
+		panic("Encountered error: " + err.Error())
+	}
+	checkClient := acl.NewCheckServiceClient(readConn)
 
-	conn, err = grpc.Dial("127.0.0.1:4466", grpc.WithInsecure())
-	checkClient := acl.NewCheckServiceClient(conn)
-	// _, err = checkClient.Check(context.Background() ...
+	check, err := checkClient.Check(context.Background(), &acl.CheckRequest{
+		Namespace: "blog_posts",
+		Object:    "my-first-blog-post",
+		Relation:  "read",
+		Subject: &acl.Subject{Ref: &acl.Subject_Id{
+			Id: "user1",
+		}},
+	})
 
-	conn, err = grpc.Dial("127.0.0.1:4466", grpc.WithInsecure())
-	expandClient := acl.NewExpandServiceClient(conn)
-	// _, err = expandClient.Expand(context.Background() ...
+	if check.Allowed {
+		fmt.Println("Alice has access to my-first-blog-post")
+	}
+
 }
