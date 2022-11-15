@@ -70,7 +70,3 @@ func main() {
 
 	fmt.Println("Successfully created tuples")
 }
-
-func GetWriteConn(context context.Context) {
-	panic("unimplemented")
-}

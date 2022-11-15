@@ -1,3 +1,6 @@
+//based on ory's keto cli's grpc client:
+//https://github.com/ory/keto/blob/6c0e1ba87f4d3a355cebd0ea77f28319be2dd606/cmd/client/grpc_client.go
+
 package ketoclient
 
 import (
@@ -19,14 +22,6 @@ import (
 type contextKeys string
 
 const (
-	FlagReadRemote  = "read-remote"
-	FlagWriteRemote = "write-remote"
-	FlagOplRemote   = "syntax-remote"
-
-	FlagInsecureNoTransportSecurity  = "insecure-disable-transport-security"
-	FlagInsecureSkipHostVerification = "insecure-skip-hostname-verification"
-	FlagAuthority                    = "authority"
-
 	ReadRemoteDefault  = "127.0.0.1:4466"
 	WriteRemoteDefault = "127.0.0.1:4467"
 	EnvReadRemote      = "KETO_READ_REMOTE"
