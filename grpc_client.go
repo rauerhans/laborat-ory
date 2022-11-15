@@ -8,11 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ory/x/flagx"
 	"golang.org/x/oauth2"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -87,33 +85,30 @@ func getRemote(envRemote, remoteDefault string) (remote string) {
 	}
 }
 
-func getAuthority(cmd *cobra.Command) string {
-	if cmd.Flags().Changed(FlagAuthority) {
-		return flagx.MustGetString(cmd, FlagAuthority)
-	}
+func getAuthority() string {
 	return os.Getenv(EnvAuthority)
 }
 
-func getConnectionDetails(cmd *cobra.Command) connectionDetails {
+func getConnectionDetails() connectionDetails {
 	return connectionDetails{
 		token:                os.Getenv(EnvAuthToken),
-		authority:            getAuthority(cmd),
-		skipHostVerification: flagx.MustGetBool(cmd, FlagInsecureSkipHostVerification),
-		noTransportSecurity:  flagx.MustGetBool(cmd, FlagInsecureNoTransportSecurity),
+		authority:            getAuthority(),
+		skipHostVerification: false,
+		noTransportSecurity:  false,
 	}
 }
 
 func GetReadConn(cmd *cobra.Command) (*grpc.ClientConn, error) {
 	return Conn(cmd.Context(),
 		getRemote(EnvReadRemote, ReadRemoteDefault),
-		getConnectionDetails(cmd),
+		getConnectionDetails(),
 	)
 }
 
 func GetWriteConn(cmd *cobra.Command) (*grpc.ClientConn, error) {
 	return Conn(cmd.Context(),
 		getRemote(EnvWriteRemote, WriteRemoteDefault),
-		getConnectionDetails(cmd),
+		getConnectionDetails(),
 	)
 }
 
@@ -134,12 +129,4 @@ func Conn(ctx context.Context, remote string, details connectionDetails) (*grpc.
 			grpc.WithDisableHealthCheck(),
 		}, details.dialOptions()...)...,
 	)
-}
-
-func RegisterRemoteURLFlags(flags *pflag.FlagSet) {
-	flags.String(FlagReadRemote, "127.0.0.1:4466", "Remote address of the read API endpoint.")
-	flags.String(FlagWriteRemote, "127.0.0.1:4467", "Remote address of the write API endpoint.")
-	flags.String(FlagAuthority, "", "Set the authority header for the remote gRPC server.")
-	flags.Bool(FlagInsecureNoTransportSecurity, false, "Disables transport security. Do not use this in production.")
-	flags.Bool(FlagInsecureSkipHostVerification, false, "Disables hostname verification. Do not use this in production.")
 }
