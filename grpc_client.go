@@ -1,7 +1,4 @@
-// Copyright © 2022 Ory Corp
-// SPDX-License-Identifier: Apache-2.0
-
-package client
+package main
 
 import (
 	"context"
@@ -33,10 +30,12 @@ const (
 	FlagInsecureSkipHostVerification = "insecure-skip-hostname-verification"
 	FlagAuthority                    = "authority"
 
-	EnvReadRemote  = "KETO_READ_REMOTE"
-	EnvWriteRemote = "KETO_WRITE_REMOTE"
-	EnvAuthToken   = "KETO_BEARER_TOKEN" // nosec G101 -- just the key, not the value
-	EnvAuthority   = "KETO_AUTHORITY"
+	ReadRemoteDefault  = "127.0.0.1:4466"
+	WriteRemoteDefault = "127.0.0.1:4467"
+	EnvReadRemote      = "KETO_READ_REMOTE"
+	EnvWriteRemote     = "KETO_WRITE_REMOTE"
+	EnvAuthToken       = "KETO_BEARER_TOKEN" // nosec G101 -- just the key, not the value
+	EnvAuthority       = "KETO_AUTHORITY"
 
 	ContextKeyTimeout contextKeys = "timeout"
 )
@@ -73,23 +72,19 @@ func (d *connectionDetails) dialOptions() (opts []grpc.DialOption) {
 	return opts
 }
 
-func getRemote(cmd *cobra.Command, flagRemote, envRemote string) (remote string) {
+func getRemote(cmd *cobra.Command, envRemote, remoteDefault string) (remote string) {
 	defer (func() {
 		if strings.HasPrefix(remote, "http://") || strings.HasPrefix(remote, "https://") {
-			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "remote \"%s\" seems to be an http URL instead of a remote address\n", remote)
+			_, _ = fmt.Fprintf(os.Stderr, "remote \"%s\" seems to be an http URL instead of a remote address\n", remote)
 		}
 	})()
 
-	if cmd.Flags().Changed(flagRemote) {
-		return flagx.MustGetString(cmd, flagRemote)
-	} else if remote, isSet := os.LookupEnv(envRemote); isSet {
+	if remote, isSet := os.LookupEnv(envRemote); isSet {
 		return remote
+	} else {
+		_, _ = fmt.Fprintf(os.Stderr, "env var %s is not set, falling back to %s\n", envRemote, remoteDefault)
+		return remoteDefault
 	}
-
-	// no value is set, use fallback from the flag and warn about that
-	remote = flagx.MustGetString(cmd, flagRemote)
-	_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "neither flag --%s nor env var %s are set, falling back to %s\n", flagRemote, envRemote, remote)
-	return remote
 }
 
 func getAuthority(cmd *cobra.Command) string {
@@ -110,7 +105,7 @@ func getConnectionDetails(cmd *cobra.Command) connectionDetails {
 
 func GetReadConn(cmd *cobra.Command) (*grpc.ClientConn, error) {
 	return Conn(cmd.Context(),
-		getRemote(cmd, FlagReadRemote, EnvReadRemote),
+		getRemote(cmd, EnvReadRemote, ReadRemoteDefault),
 		getConnectionDetails(cmd),
 	)
 }
