@@ -10,7 +10,6 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -98,15 +97,15 @@ func getConnectionDetails() connectionDetails {
 	}
 }
 
-func GetReadConn(cmd *cobra.Command) (*grpc.ClientConn, error) {
-	return Conn(cmd.Context(),
+func GetReadConn(ctx context.Context) (*grpc.ClientConn, error) {
+	return Conn(ctx,
 		getRemote(EnvReadRemote, ReadRemoteDefault),
 		getConnectionDetails(),
 	)
 }
 
-func GetWriteConn(cmd *cobra.Command) (*grpc.ClientConn, error) {
-	return Conn(cmd.Context(),
+func GetWriteConn(ctx context.Context) (*grpc.ClientConn, error) {
+	return Conn(ctx,
 		getRemote(EnvWriteRemote, WriteRemoteDefault),
 		getConnectionDetails(),
 	)
