@@ -1,7 +1,0 @@
-{
-    "private": true,
-    "devDependencies": {
-        "@ory/keto-namespace-types": "latest",
-        "typescript": "^4.8.4"
-    }
-}
