@@ -72,7 +72,7 @@ func (d *connectionDetails) dialOptions() (opts []grpc.DialOption) {
 	return opts
 }
 
-func getRemote(cmd *cobra.Command, envRemote, remoteDefault string) (remote string) {
+func getRemote(envRemote, remoteDefault string) (remote string) {
 	defer (func() {
 		if strings.HasPrefix(remote, "http://") || strings.HasPrefix(remote, "https://") {
 			_, _ = fmt.Fprintf(os.Stderr, "remote \"%s\" seems to be an http URL instead of a remote address\n", remote)
@@ -105,14 +105,14 @@ func getConnectionDetails(cmd *cobra.Command) connectionDetails {
 
 func GetReadConn(cmd *cobra.Command) (*grpc.ClientConn, error) {
 	return Conn(cmd.Context(),
-		getRemote(cmd, EnvReadRemote, ReadRemoteDefault),
+		getRemote(EnvReadRemote, ReadRemoteDefault),
 		getConnectionDetails(cmd),
 	)
 }
 
 func GetWriteConn(cmd *cobra.Command) (*grpc.ClientConn, error) {
 	return Conn(cmd.Context(),
-		getRemote(cmd, FlagWriteRemote, EnvWriteRemote),
+		getRemote(EnvWriteRemote, WriteRemoteDefault),
 		getConnectionDetails(cmd),
 	)
 }
