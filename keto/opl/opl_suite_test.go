@@ -1,4 +1,4 @@
-package opl_test_test
+package opl_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestOplTest(t *testing.T) {
+func TestOpl(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "OplTest Suite")
+	RunSpecs(t, "Opl Suite")
 }
