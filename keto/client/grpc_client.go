@@ -17,6 +17,8 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/credentials/oauth"
+
+	rts "github.com/ory/keto/proto/ory/keto/relation_tuples/v1alpha2"
 )
 
 type contextKeys string
@@ -123,4 +125,32 @@ func Conn(ctx context.Context, remote string, details connectionDetails) (*grpc.
 			grpc.WithDisableHealthCheck(),
 		}, details.dialOptions()...)...,
 	)
+}
+
+type WriteServiceClientForDummies interface {
+	rts.WriteServiceClient
+	Insert(ctx context.Context, tuples []*rts.RelationTuple) (*rts.TransactRelationTuplesResponse, error)
+	Delete(ctx context.Context, tuples []*rts.RelationTuple) (*rts.DeleteRelationTuplesResponse, error)
+}
+
+type WriteClient struct {
+	wsc rts.WriteServiceClient
+}
+
+func (client *WriteClient) Insert(ctx context.Context, tuples []*rts.RelationTuple) (*rts.TransactRelationTuplesResponse, error) {
+	return client.wsc.TransactRelationTuples(ctx, &rts.TransactRelationTuplesRequest{
+		RelationTupleDeltas: rts.RelationTupleToDeltas(tuples, rts.RelationTupleDelta_ACTION_INSERT),
+	})
+}
+
+func (client *WriteClient) Delete(ctx context.Context, tuples []*rts.RelationTuple) (*rts.TransactRelationTuplesResponse, error) {
+	return client.wsc.TransactRelationTuples(ctx, &rts.TransactRelationTuplesRequest{
+		RelationTupleDeltas: rts.RelationTupleToDeltas(tuples, rts.RelationTupleDelta_ACTION_INSERT),
+	})
+}
+
+func NewWriteClient(cc grpc.ClientConnInterface) WriteClient {
+	return WriteClient{
+		wsc: rts.NewWriteServiceClient(cc),
+	}
 }
