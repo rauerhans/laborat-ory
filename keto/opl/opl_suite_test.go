@@ -23,6 +23,7 @@ func TestOpl(t *testing.T) {
 
 var wcl rts.WriteServiceClient
 var rcl rts.ReadServiceClient
+var ccl rts.CheckServiceClient
 
 var _ = BeforeSuite(func() {
 	err := godotenv.Load("../.env") // 👈 load .env file
@@ -41,6 +42,7 @@ var _ = BeforeSuite(func() {
 	if err != nil {
 		panic("Encountered error: " + err.Error())
 	}
+
 	wcl = rts.NewWriteServiceClient(conn)
 
 	conn, err = ketoclient.GetReadConn(context.TODO())
@@ -49,5 +51,12 @@ var _ = BeforeSuite(func() {
 	}
 
 	rcl = rts.NewReadServiceClient(conn)
+
+	conn, err = ketoclient.GetReadConn(context.TODO())
+	if err != nil {
+		panic("Encountered error: " + err.Error())
+	}
+
+	ccl = rts.NewCheckServiceClient(conn)
 
 })
