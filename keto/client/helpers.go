@@ -1,4 +1,4 @@
-//source: https://github.com/ory/keto/blob/6c0e1ba87f4d3a355cebd0ea77f28319be2dd606/cmd/relationtuple/output.go
+//source & inspiration: https://github.com/ory/keto/blob/6c0e1ba87f4d3a355cebd0ea77f28319be2dd606/cmd/relationtuple/output.go
 
 package client
 
@@ -10,35 +10,27 @@ import (
 
 type (
 	Collection struct {
-		apiRelations []*rts.RelationTuple
+		relations []*rts.RelationTuple
 	}
 	OutputTuple struct {
 		*rts.RelationTuple
 	}
 )
 
-//func NewProtoCollection(rels []*rts.RelationTuple) (*Collection, error) {
-//	r := &Collection{apiRelations: make([]*rts.RelationTuple, len(rels))}
-//	for i, rel := range rels {
-//		var err error
-//		r.apiRelations[i], err = (&rts.RelationTuple{}).FromDataProvider(rel)
-//		if err != nil {
-//			return nil, err
-//		}
-//	}
-//	return r, nil
-//}
-
-func MustNewProtoCollection(rels []*rts.RelationTuple) *Collection {
-	//c, err := NewProtoCollection(rels)
-	//if err != nil {
-	//	panic(err)
+func NewCollection(rels []*rts.RelationTuple) (*Collection, error) {
+	r := &Collection{relations: rels}
+	//for i, rel := range rels {
+	//	var err error
+	//	r.relations[i], err = &rts.RelationTuple{}).FromDataProvider(rel)
+	//	if err != nil {
+	//		return nil, err
+	//	}
 	//}
-	return nil
+	return r, nil
 }
 
 func NewAPICollection(rels []*rts.RelationTuple) *Collection {
-	return &Collection{apiRelations: rels}
+	return &Collection{relations: rels}
 }
 
 func (r *Collection) Header() []string {
@@ -51,7 +43,7 @@ func (r *Collection) Header() []string {
 }
 
 func (r *Collection) Table() [][]string {
-	ir := r.apiRelations
+	ir := r.relations
 
 	data := make([][]string, len(ir))
 	for i, rel := range ir {
@@ -69,24 +61,24 @@ func (r *Collection) Table() [][]string {
 }
 
 func (r *Collection) Interface() interface{} {
-	return r.apiRelations
+	return r.relations
 }
 
 func (r *Collection) MarshalJSON() ([]byte, error) {
-	ir := r.apiRelations
+	ir := r.relations
 	return json.Marshal(ir)
 }
 
 func (r *Collection) UnmarshalJSON(raw []byte) error {
-	return json.Unmarshal(raw, &r.apiRelations)
+	return json.Unmarshal(raw, &r.relations)
 }
 
 func (r *Collection) Len() int {
-	return len(r.apiRelations)
+	return len(r.relations)
 }
 
 func (r *Collection) IDs() []string {
-	ts := r.apiRelations
+	ts := r.relations
 	ids := make([]string, len(ts))
 	for i, rt := range ts {
 		ids[i] = rt.String()
