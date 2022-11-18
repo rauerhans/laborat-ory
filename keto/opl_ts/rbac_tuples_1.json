@@ -9,7 +9,7 @@
     "namespace": "Project",
     "object": "prj",
     "relation": "access",
-    "subject": {
+    "subject_set": {
       "namespace": "Group",
       "object": "ops"
     }
@@ -18,7 +18,7 @@
     "namespace": "Role",
     "object": "admin",
     "relation": "principal",
-    "subject": {
+    "subject_set": {
       "namespace": "Project",
       "object": "prj"
     }
@@ -27,7 +27,7 @@
     "namespace": "Policy",
     "object": "full_access",
     "relation": "allow",
-    "subject": {
+    "subject_set": {
       "namespace": "Role",
       "object": "principal"
     }
@@ -36,7 +36,7 @@
     "namespace": "S3ResourceType",
     "object": "s3bucket",
     "relation": "create",
-    "subject": {
+    "subject_set": {
       "namespace": "Policy",
       "object": "full_access"
     }
@@ -45,7 +45,7 @@
     "namespace": "S3Resource",
     "object": "mybucket",
     "relation": "instance",
-    "subject": {
+    "subject_set": {
       "namespace": "S3ResourceType",
       "object": "s3bucket"
     }
@@ -54,7 +54,7 @@
     "namespace": "S3Resource",
     "object": "mybucket",
     "relation": "read",
-    "subject": {
+    "subject_set": {
       "namespace": "ResourcePolicy",
       "object": "read_only"
     }
@@ -63,7 +63,7 @@
     "namespace": "ResourcePolicy",
     "object": "read_only",
     "relation": "trust",
-    "subject": {
+    "subject_set": {
       "namespace": "User",
       "object": "david"
     }
