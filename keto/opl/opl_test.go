@@ -7,6 +7,7 @@ import (
 	//. "github.com/onsi/gomega"
 
 	rts "github.com/ory/keto/proto/ory/keto/relation_tuples/v1alpha2"
+	"github.com/ory/x/pointerx"
 
 	"github.com/rauerhans/laborat-ory/keto/client"
 )
@@ -14,6 +15,7 @@ import (
 var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 	var _ = Describe("Scenario to cover most constellations.", func() {
 		BeforeEach(func() {
+			//set up database before each test
 			tuples := []*rts.RelationTuple{
 				{
 					Namespace: "Group",
@@ -53,6 +55,7 @@ var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 
 		})
 		AfterEach(func() {
+			//tear database down before each test
 			query := rts.RelationQuery{
 				Namespace: nil,
 				Object:    nil,
@@ -66,18 +69,15 @@ var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 				panic("Encountered error: " + err.Error())
 			}
 		})
-
 		It("should be able to delete all", func() {
 
 		})
-		It("should be able to list", func() {
+		It("should be able to list all", func() {
 			query := rts.RelationQuery{
-				Namespace: nil,
+				Namespace: pointerx.Ptr("Group"),
 				Object:    nil,
 				Relation:  nil,
 				Subject:   nil,
-
-				//Namespace: pointerx.Ptr("User"),
 			}
 			resp, err := rcl.ListRelationTuples(context.Background(), &rts.ListRelationTuplesRequest{
 				RelationQuery: &query,
@@ -91,7 +91,6 @@ var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 			if err != nil {
 				panic("Encountered error: " + err.Error())
 			}
-
 		})
 	})
 })
