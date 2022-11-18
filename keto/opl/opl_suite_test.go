@@ -13,7 +13,7 @@ import (
 
 	rts "github.com/ory/keto/proto/ory/keto/relation_tuples/v1alpha2"
 
-	ketoclient "github.com/rauerhans/laborat-ory/keto/client"
+	"github.com/rauerhans/laborat-ory/keto/client"
 )
 
 func TestOpl(t *testing.T) {
@@ -38,21 +38,21 @@ var _ = BeforeSuite(func() {
 	GinkgoWriter.Printf("KETO_READ_REMOTE: %s\n", os.Getenv("KETO_READ_REMOTE"))
 	GinkgoWriter.Printf("KETO_WRITE_REMOTE: %s\n", os.Getenv("KETO_WRITE_REMOTE"))
 
-	conn, err := ketoclient.GetWriteConn(context.TODO())
+	conn, err := client.GetWriteConn(context.TODO())
 	if err != nil {
 		panic("Encountered error: " + err.Error())
 	}
 
 	wcl = rts.NewWriteServiceClient(conn)
 
-	conn, err = ketoclient.GetReadConn(context.TODO())
+	conn, err = client.GetReadConn(context.TODO())
 	if err != nil {
 		panic("Encountered error: " + err.Error())
 	}
 
 	rcl = rts.NewReadServiceClient(conn)
 
-	conn, err = ketoclient.GetReadConn(context.TODO())
+	conn, err = client.GetReadConn(context.TODO())
 	if err != nil {
 		panic("Encountered error: " + err.Error())
 	}
