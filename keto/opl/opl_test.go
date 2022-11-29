@@ -7,47 +7,22 @@ import (
 	//. "github.com/onsi/gomega"
 
 	rts "github.com/ory/keto/proto/ory/keto/relation_tuples/v1alpha2"
-	"github.com/ory/x/pointerx"
+	px "github.com/ory/x/pointerx"
 
 	"github.com/rauerhans/laborat-ory/keto/client"
 )
 
 var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 	var _ = Describe("Scenario to cover most constellations.", func() {
+		//5 users: Hans, David, Nico, Lianet, Sophie
+		//2 groups: AllUsers, Ops
+		//1 project: Manhattan
+		//2 roles in project Manhattan: creator, editor
+		//2 policies:
 		BeforeEach(func() {
 			//set up database before each test
-			tuples := []*rts.RelationTuple{
-				{
-					Namespace: "Group",
-					Object:    "ops",
-					Relation:  "member",
-					Subject: rts.NewSubjectSet(
-						"User",
-						"Hans",
-						"",
-					),
-				}, {
-					Namespace: "Group",
-					Object:    "ops",
-					Relation:  "member",
-					Subject: rts.NewSubjectSet(
-						"User",
-						"David",
-						"",
-					),
-				}, {
-					Namespace: "Group",
-					Object:    "ops",
-					Relation:  "member",
-					Subject: rts.NewSubjectSet(
-						"User",
-						"Sophie",
-						"",
-					),
-				},
-			}
 			_, err := wcl.TransactRelationTuples(context.TODO(), &rts.TransactRelationTuplesRequest{
-				RelationTupleDeltas: rts.RelationTupleToDeltas(tuples, rts.RelationTupleDelta_ACTION_INSERT),
+				RelationTupleDeltas: rts.RelationTupleToDeltas(scenario_1, rts.RelationTupleDelta_ACTION_INSERT),
 			})
 			if err != nil {
 				panic("Encountered error: " + err.Error())
@@ -55,7 +30,7 @@ var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 
 		})
 		AfterEach(func() {
-			//tear database down before each test
+			//tear down database after each test
 			query := rts.RelationQuery{
 				Namespace: nil,
 				Object:    nil,
@@ -69,13 +44,10 @@ var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 				panic("Encountered error: " + err.Error())
 			}
 		})
-		It("should be able to delete all", func() {
-
-		})
-		It("should be able to list all", func() {
+		It("should be able to list all users", func() {
 			query := rts.RelationQuery{
-				Namespace: pointerx.Ptr("Group"),
-				Object:    nil,
+				Namespace: px.Ptr("Group"),
+				Object:    px.Ptr("AllUsers"),
 				Relation:  nil,
 				Subject:   nil,
 			}
@@ -85,12 +57,7 @@ var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 			if err != nil {
 				panic("Encountered error: " + err.Error())
 			}
-
-			relationTuples, err := client.NewCollection(resp.RelationTuples)
-			client.PrintTable(client.FormatTable, GinkgoWriter, relationTuples)
-			if err != nil {
-				panic("Encountered error: " + err.Error())
-			}
+			client.PrintTableFromRelationTuples(resp.RelationTuples, GinkgoWriter)
 		})
 	})
 })
