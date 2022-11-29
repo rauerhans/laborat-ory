@@ -16,6 +16,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/tidwall/gjson"
 
+	rts "github.com/ory/keto/proto/ory/keto/relation_tuples/v1alpha2"
 	"github.com/ory/x/cmdx"
 )
 
@@ -128,6 +129,17 @@ func PrintTable(f format, io io.Writer, table Table) {
 		}
 
 		_ = w.Flush()
+	}
+}
+
+//relationTuples, err := client.NewCollection(resp.RelationTuples)
+//client.PrintTable(client.FormatTable, GinkgoWriter, relationTuples)
+
+func PrintTableFromRelationTuples(rels []*rts.RelationTuple, out io.Writer) {
+	relationTuples, err := NewCollection(rels)
+	PrintTable(FormatTable, out, relationTuples)
+	if err != nil {
+		panic("Encountered error: " + err.Error())
 	}
 }
 
