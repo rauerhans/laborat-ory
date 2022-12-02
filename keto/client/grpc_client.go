@@ -110,3 +110,24 @@ func (g *grpcClient) queryAllTuples(q *rts.RelationQuery, pagesize int) ([]*rts.
 	}
 	return tuples, err
 }
+
+func (g *grpcClient) check(r *rts.RelationTuple) (bool, error) {
+	c := rts.NewCheckServiceClient(g.rc)
+
+	req := &rts.CheckRequest{
+		Tuple: r,
+	}
+	resp, err := c.Check(g.ctx, req)
+
+	return resp.Allowed, err
+}
+
+func (g *grpcClient) expand(ss *rts.Subject, depth int) (*rts.SubjectTree, error) {
+	c := rts.NewExpandServiceClient(g.rc)
+
+	resp, err := c.Expand(g.ctx, &rts.ExpandRequest{
+		Subject:  ss,
+		MaxDepth: int32(depth),
+	})
+	return resp.Tree, err
+}
