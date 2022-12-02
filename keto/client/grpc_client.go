@@ -6,9 +6,9 @@ package client
 import (
 	"context"
 
-	"github.com/ory/herodot"
 	rts "github.com/ory/keto/proto/ory/keto/relation_tuples/v1alpha2"
 	"google.golang.org/grpc"
+	grpcHealthV1 "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 type Client interface {
@@ -17,10 +17,10 @@ type Client interface {
 	deleteTuple(r *rts.RelationTuple) error
 	deleteAllTuples(q *rts.RelationQuery) error
 	queryTuple(q *rts.RelationQuery, opts ...PaginationOptionSetter) (*rts.ListRelationTuplesResponse, error)
-	queryTupleErr(expected herodot.DefaultError, q *rts.RelationQuery, opts ...PaginationOptionSetter)
-	check(r *rts.RelationTuple) bool
-	//expand(r *rts.SubjectSet, depth int) *rts.Tree[*rts.RelationTuple]
-	//waitUntilLive()
+	queryAllTuples(q *rts.RelationQuery, pagesize int) ([]*rts.RelationTuple, error)
+	check(r *rts.RelationTuple) (error, bool)
+	expand(r *rts.SubjectSet, depth int) (error, *rts.SubjectTree)
+	waitUntilLive()
 	//queryNamespaces(rts.GetNamespacesResponse)
 }
 
@@ -130,4 +130,33 @@ func (g *grpcClient) expand(ss *rts.Subject, depth int) (*rts.SubjectTree, error
 		MaxDepth: int32(depth),
 	})
 	return resp.Tree, err
+}
+
+//TODO not sure if this is the correct thing to do
+func (g *grpcClient) waitUntilLive() error {
+	c := grpcHealthV1.NewHealthClient(g.rc)
+
+	ctx, cancel := context.WithCancel(g.ctx)
+	defer cancel()
+
+	cl, err := c.Watch(ctx, &grpcHealthV1.HealthCheckRequest{})
+	if err != nil {
+		return err
+	}
+
+	for {
+		select {
+		case <-g.ctx.Done():
+			return nil
+		default:
+		}
+		resp, err := cl.Recv()
+
+		if resp.Status == grpcHealthV1.HealthCheckResponse_SERVING {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+	}
 }
