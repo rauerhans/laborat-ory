@@ -12,6 +12,8 @@ import (
 )
 
 type Client interface {
+	//TODO
+	//queryNamespaces()
 	transactTuples(ins []*rts.RelationTuple, del []*rts.RelationTuple)
 	createTuple(r *rts.RelationTuple) error
 	deleteTuple(r *rts.RelationTuple) error
@@ -21,7 +23,6 @@ type Client interface {
 	check(r *rts.RelationTuple) (error, bool)
 	expand(r *rts.SubjectSet, depth int) (error, *rts.SubjectTree)
 	waitUntilLive()
-	//queryNamespaces(rts.GetNamespacesResponse)
 }
 
 type grpcClient struct {
@@ -29,6 +30,10 @@ type grpcClient struct {
 	wc, rc, oc  *grpc.ClientConn
 	ctx         context.Context
 }
+
+//func (g *grpcClient) queryNamespaces() {
+//	return
+//}
 
 func (g *grpcClient) transactTuples(ins []*rts.RelationTuple, del []*rts.RelationTuple) error {
 	c := rts.NewWriteServiceClient(g.wc)
