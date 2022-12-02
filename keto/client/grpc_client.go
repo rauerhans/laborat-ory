@@ -5,152 +5,108 @@ package client
 
 import (
 	"context"
-	"crypto/tls"
-	"fmt"
-	"os"
-	"strings"
-	"time"
 
-	"golang.org/x/oauth2"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/credentials/oauth"
-
+	"github.com/ory/herodot"
 	rts "github.com/ory/keto/proto/ory/keto/relation_tuples/v1alpha2"
+	"google.golang.org/grpc"
 )
 
-type contextKeys string
-
-const (
-	ReadRemoteDefault  = "127.0.0.1:4466"
-	WriteRemoteDefault = "127.0.0.1:4467"
-	EnvReadRemote      = "KETO_READ_REMOTE"
-	EnvWriteRemote     = "KETO_WRITE_REMOTE"
-	EnvAuthToken       = "KETO_BEARER_TOKEN" // nosec G101 -- just the key, not the value
-	EnvAuthority       = "KETO_AUTHORITY"
-
-	ContextKeyTimeout contextKeys = "timeout"
-)
-
-type connectionDetails struct {
-	token, authority     string
-	skipHostVerification bool
-	noTransportSecurity  bool
+type Client interface {
+	transactTuples(ins []*rts.RelationTuple, del []*rts.RelationTuple)
+	createTuple(r *rts.RelationTuple) error
+	deleteTuple(r *rts.RelationTuple) error
+	deleteAllTuples(q *rts.RelationQuery) error
+	queryTuple(q *rts.RelationQuery, opts ...PaginationOptionSetter) (*rts.ListRelationTuplesResponse, error)
+	queryTupleErr(expected herodot.DefaultError, q *rts.RelationQuery, opts ...PaginationOptionSetter)
+	check(r *rts.RelationTuple) bool
+	//expand(r *rts.SubjectSet, depth int) *rts.Tree[*rts.RelationTuple]
+	//waitUntilLive()
+	//queryNamespaces(rts.GetNamespacesResponse)
 }
 
-func (d *connectionDetails) dialOptions() (opts []grpc.DialOption) {
-	if d.token != "" {
-		opts = append(opts,
-			grpc.WithPerRPCCredentials(
-				oauth.NewOauthAccess(&oauth2.Token{AccessToken: d.token})))
-	}
-	if d.authority != "" {
-		opts = append(opts, grpc.WithAuthority(d.authority))
-	}
+type grpcClient struct {
+	connDetails ConnectionDetails
+	wc, rc, oc  *grpc.ClientConn
+	ctx         context.Context
+}
 
-	// TLS settings
-	switch {
-	case d.noTransportSecurity:
-		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	case d.skipHostVerification:
-		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-			// nolint explicity set through scary flag
-			InsecureSkipVerify: true,
-		})))
-	default:
-		// Defaults to the default host root CA bundle
-		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(nil)))
+func (g *grpcClient) transactTuples(ins []*rts.RelationTuple, del []*rts.RelationTuple) error {
+	c := rts.NewWriteServiceClient(g.wc)
+
+	deltas := append(
+		rts.RelationTupleToDeltas(ins, rts.RelationTupleDelta_ACTION_INSERT),
+		rts.RelationTupleToDeltas(del, rts.RelationTupleDelta_ACTION_DELETE)...,
+	)
+
+	_, err := c.TransactRelationTuples(g.ctx, &rts.TransactRelationTuplesRequest{
+		RelationTupleDeltas: deltas,
+	})
+	return err
+}
+
+func (g *grpcClient) createTuple(r *rts.RelationTuple) error {
+	return g.transactTuples([]*rts.RelationTuple{r}, nil)
+}
+
+func (g *grpcClient) deleteTuple(r *rts.RelationTuple) error {
+	return g.transactTuples(nil, []*rts.RelationTuple{r})
+}
+
+func (g *grpcClient) deleteAllTuples(q *rts.RelationQuery) error {
+	c := rts.NewWriteServiceClient(g.wc)
+	_, err := c.DeleteRelationTuples(g.ctx, &rts.DeleteRelationTuplesRequest{
+		RelationQuery: q,
+	})
+	return err
+}
+
+type (
+	PaginationOptions struct {
+		Token string `json:"page_token"`
+		Size  int    `json:"page_size"`
+	}
+	PaginationOptionSetter func(*PaginationOptions) *PaginationOptions
+)
+
+func WithToken(t string) PaginationOptionSetter {
+	return func(opts *PaginationOptions) *PaginationOptions {
+		opts.Token = t
+		return opts
+	}
+}
+
+func WithSize(size int) PaginationOptionSetter {
+	return func(opts *PaginationOptions) *PaginationOptions {
+		opts.Size = size
+		return opts
+	}
+}
+
+func GetPaginationOptions(modifiers ...PaginationOptionSetter) *PaginationOptions {
+	opts := &PaginationOptions{}
+	for _, f := range modifiers {
+		opts = f(opts)
 	}
 	return opts
 }
 
-func getRemote(envRemote, remoteDefault string) (remote string) {
-	defer (func() {
-		if strings.HasPrefix(remote, "http://") || strings.HasPrefix(remote, "https://") {
-			_, _ = fmt.Fprintf(os.Stderr, "remote \"%s\" seems to be an http URL instead of a remote address\n", remote)
-		}
-	})()
-
-	if remote, isSet := os.LookupEnv(envRemote); isSet {
-		return remote
-	} else {
-		_, _ = fmt.Fprintf(os.Stderr, "env var %s is not set, falling back to %s\n", envRemote, remoteDefault)
-		return remoteDefault
-	}
-}
-
-func getAuthority() string {
-	return os.Getenv(EnvAuthority)
-}
-
-func getConnectionDetails() connectionDetails {
-	return connectionDetails{
-		token:                os.Getenv(EnvAuthToken),
-		authority:            getAuthority(),
-		skipHostVerification: false,
-		noTransportSecurity:  false,
-	}
-}
-
-func GetReadConn(ctx context.Context) (*grpc.ClientConn, error) {
-	return Conn(ctx,
-		getRemote(EnvReadRemote, ReadRemoteDefault),
-		getConnectionDetails(),
-	)
-}
-
-func GetWriteConn(ctx context.Context) (*grpc.ClientConn, error) {
-	return Conn(ctx,
-		getRemote(EnvWriteRemote, WriteRemoteDefault),
-		getConnectionDetails(),
-	)
-}
-
-func Conn(ctx context.Context, remote string, details connectionDetails) (*grpc.ClientConn, error) {
-	timeout := 3 * time.Second
-	if d, ok := ctx.Value(ContextKeyTimeout).(time.Duration); ok {
-		timeout = d
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	return grpc.DialContext(
-		ctx,
-		remote,
-		append([]grpc.DialOption{
-			grpc.WithBlock(),
-			grpc.WithDisableHealthCheck(),
-		}, details.dialOptions()...)...,
-	)
-}
-
-type WriteServiceClientForDummies interface {
-	rts.WriteServiceClient
-	Insert(ctx context.Context, tuples []*rts.RelationTuple) (*rts.TransactRelationTuplesResponse, error)
-	Delete(ctx context.Context, tuples []*rts.RelationTuple) (*rts.DeleteRelationTuplesResponse, error)
-}
-
-type WriteClient struct {
-	wsc rts.WriteServiceClient
-}
-
-func (client *WriteClient) Insert(ctx context.Context, tuples []*rts.RelationTuple) (*rts.TransactRelationTuplesResponse, error) {
-	return client.wsc.TransactRelationTuples(ctx, &rts.TransactRelationTuplesRequest{
-		RelationTupleDeltas: rts.RelationTupleToDeltas(tuples, rts.RelationTupleDelta_ACTION_INSERT),
+func (g *grpcClient) queryTuple(q *rts.RelationQuery, opts ...PaginationOptionSetter) (*rts.ListRelationTuplesResponse, error) {
+	c := rts.NewReadServiceClient(g.rc)
+	pagination := GetPaginationOptions(opts...)
+	resp, err := c.ListRelationTuples(g.ctx, &rts.ListRelationTuplesRequest{
+		RelationQuery: q,
+		PageToken:     pagination.Token,
+		PageSize:      int32(pagination.Size),
 	})
+	return resp, err
 }
 
-func (client *WriteClient) Delete(ctx context.Context, tuples []*rts.RelationTuple) (*rts.TransactRelationTuplesResponse, error) {
-	return client.wsc.TransactRelationTuples(ctx, &rts.TransactRelationTuplesRequest{
-		RelationTupleDeltas: rts.RelationTupleToDeltas(tuples, rts.RelationTupleDelta_ACTION_INSERT),
-	})
-}
-
-func NewWriteClient(cc grpc.ClientConnInterface) WriteClient {
-	return WriteClient{
-		wsc: rts.NewWriteServiceClient(cc),
+func (g *grpcClient) queryAllTuples(q *rts.RelationQuery, pagesize int) ([]*rts.RelationTuple, error) {
+	tuples := make([]*rts.RelationTuple, 0)
+	resp, err := g.queryTuple(q, WithSize(pagesize))
+	for resp.NextPageToken != "" && err == nil {
+		resp, err = g.queryTuple(q, WithToken(resp.NextPageToken), WithSize(pagesize))
+		tuples = append(tuples, resp.RelationTuples...)
 	}
+	return tuples, err
 }
