@@ -5,6 +5,10 @@ import (
 )
 
 var scenario_1 = []*rts.RelationTuple{
+	//-------- create Groups and Users ---------
+	// Group: AllUsers
+	// User objects are created implicitly through member relation tuples to a group `AllUsers` that contains all users
+	// In a live Ory Kratos/Keto setup this group should reflect the users that are registered with Kratos
 	{
 		Namespace: "Group",
 		Object:    "AllUsers",
@@ -55,6 +59,8 @@ var scenario_1 = []*rts.RelationTuple{
 			"",
 		),
 	},
+	// Group: Ops
+	// Some users are members of the group `Ops` that should contain users with admin access intended for administrative tasks
 	{
 		Namespace: "Group",
 		Object:    "Ops",
@@ -75,6 +81,13 @@ var scenario_1 = []*rts.RelationTuple{
 			"",
 		),
 	},
+	//-------- create a project ---------
+	// access does not entail any permissions, it is just a relation that's there to confirm that a user is registered with the project
+	// if a user is not registered with a project they cannot perform any actions on resources inside the project even if there are still roles and policies in place that allow certain actions
+	// that way we can for example revoke all access by severing the access to a project without deleting all policies or roles
+	// Project: Manhattan
+
+	// all members of group `Ops` have access to the project `Manhattan`
 	{
 		Namespace: "Project",
 		Object:    "Manhattan",
@@ -85,6 +98,7 @@ var scenario_1 = []*rts.RelationTuple{
 			"",
 		),
 	},
+	// additionally Nico and Lianet have explicit access to the project `Manhattan`
 	{
 		Namespace: "Project",
 		Object:    "Manhattan",
@@ -105,6 +119,13 @@ var scenario_1 = []*rts.RelationTuple{
 			"",
 		),
 	},
+
+	//-------- create roles ---------
+	// every action from a project member is performed on behalf of a principal
+	// at this time only roles can act as principals
+
+	// Role: Admin
+	// we create a role `Admin` as a principal of project `Manhattan` that will get various wide ranging permissions through appropriate policies
 	{
 		Namespace: "Role",
 		Object:    "Admin",
@@ -115,6 +136,8 @@ var scenario_1 = []*rts.RelationTuple{
 			"",
 		),
 	},
+	// Role: Dev
+	// we create a role `Dev` as a principal of project `Manhattan` that will get more narrow permissions
 	{
 		Namespace: "Role",
 		Object:    "Dev",
@@ -125,103 +148,105 @@ var scenario_1 = []*rts.RelationTuple{
 			"",
 		),
 	},
+
+	//-------- create  ---------
 	{
-		Namespace: "S3ResourceType",
-		Object:    "S3",
+		Namespace: "KubernetesResourceType",
+		Object:    "Service",
 		Relation:  "create",
 		Subject: rts.NewSubjectSet(
 			"Policy",
-			"CreatePolicy",
+			"AdminPolicy",
 			"",
 		),
 	},
 	{
-		Namespace: "S3ResourceType",
-		Object:    "S3",
-		Relation:  "write",
+		Namespace: "KubernetesResourceType",
+		Object:    "Service",
+		Relation:  "delete",
 		Subject: rts.NewSubjectSet(
 			"Policy",
-			"EditPolicy",
+			"AdminPolicy",
 			"",
 		),
 	},
 	{
-		Namespace: "S3ResourceType",
-		Object:    "S3",
-		Relation:  "read",
+		Namespace: "KubernetesResourceType",
+		Object:    "Service",
+		Relation:  "get",
 		Subject: rts.NewSubjectSet(
 			"Policy",
-			"EditPolicy",
+			"AdminPolicy",
 			"",
 		),
 	},
 	{
-		Namespace: "Policy",
-		Object:    "CreatePolicy",
-		Relation:  "allow",
+		Namespace: "KubernetesResourceType",
+		Object:    "Service",
+		Relation:  "list",
 		Subject: rts.NewSubjectSet(
-			"Role",
-			"Admin",
+			"Policy",
+			"AdminPolicy",
 			"",
 		),
 	},
 	{
-		Namespace: "Policy",
-		Object:    "EditPolicy",
-		Relation:  "allow",
+		Namespace: "KubernetesResourceType",
+		Object:    "Service",
+		Relation:  "update",
 		Subject: rts.NewSubjectSet(
-			"Role",
-			"Admin",
+			"Policy",
+			"AdminPolicy",
 			"",
 		),
 	},
 	{
-		Namespace: "Policy",
-		Object:    "EditPolicy",
-		Relation:  "allow",
+		Namespace: "KubernetesResourceType",
+		Object:    "Service",
+		Relation:  "get",
 		Subject: rts.NewSubjectSet(
-			"Role",
-			"Dev",
+			"Policy",
+			"DevPolicy",
 			"",
 		),
 	},
 	{
-		Namespace: "Policy",
-		Object:    "EditPolicy",
-		Relation:  "allow",
+		Namespace: "KubernetesResourceType",
+		Object:    "Service",
+		Relation:  "list",
 		Subject: rts.NewSubjectSet(
-			"Role",
-			"Dev",
+			"Policy",
+			"DevPolicy",
 			"",
 		),
 	},
 	{
-		Namespace: "S3Resource",
-		Object:    "XFiles",
-		Relation:  "instance",
+		Namespace: "KubricksResourceType",
+		Object:    "MLFlow",
+		Relation:  "accessapi",
 		Subject: rts.NewSubjectSet(
-			"S3ResourceType",
-			"S3",
+			"Policy",
+			"AdminPolicy",
 			"",
 		),
 	},
 	{
-		Namespace: "S3Resource",
-		Object:    "XFiles",
-		Relation:  "read",
-		Subject: rts.NewSubjectSet(
-			"ResourcePolicy",
-			"XFilesReadOnly",
-			"",
-		),
-	},
-	{
-		Namespace: "ResourcePolicy",
-		Object:    "XFilesReadOnly",
-		Relation:  "trust",
+		Namespace: "ServiceResource",
+		Object:    "MLFlowInstance",
+		Relation:  "owner",
 		Subject: rts.NewSubjectSet(
 			"User",
-			"Sophie",
+			"Hans",
+			"",
+		),
+	},
+	{
+		Namespace: "ServiceResource",
+		Object:    "MLFlowInstance",
+		Relation:  "owner",
+		Subject: rts.NewSubjectSet(
+			"User",
+			"Hans",
 			"",
 		),
 	},
