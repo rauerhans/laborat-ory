@@ -67,31 +67,50 @@ class KubernetesResourceType implements Namespace {
 
 class KubricksResourceType implements Namespace {
   related: {
-    apiaccess: Policy[]
+    create: Policy[]
+    delete: Policy[]
+    get: Policy[]
+    list: Policy[]
+    update: Policy[]
+
+    accessapi: Policy[]
+
+    hassecret: KubernetesResourceType[]
+    setsecret: Policy[]
+    getsecret: Policy[]
   }
 
   permits = {
-    can_apiaccess: (ctx: Context) => this.related.apiaccess.traverse((p) => p.permits.allow(ctx)),
+    // do things with the resource definition and its properties
+    can_create: (ctx: Context) => this.related.create.traverse((p) => p.permits.allow(ctx)),
+    can_delete: (ctx: Context) => this.related.delete.traverse((p) => p.permits.allow(ctx)),
+    can_get: (ctx: Context) => this.related.delete.traverse((p) => p.permits.allow(ctx)),
+    can_list: (ctx: Context) => this.related.delete.traverse((p) => p.permits.allow(ctx)),
+    can_update: (ctx: Context) => this.related.delete.traverse((p) => p.permits.allow(ctx)),
+
+    // do things with the resources possible API
+    can_accessapi: (ctx: Context) => this.related.accessapi.traverse((p) => p.permits.allow(ctx)),
+
+    // do things with the resources possible kubernetes dependencies without giving broader access to the resource itself
+    can_setsecret: (ctx: Context) => this.related.setsecret.traverse((p) => p.permits.allow(ctx)) || this.related.hassecret.traverse((p) => p.permits.can_delete(ctx) && p.permits.can_create(ctx)),
+    can_getsecret: (ctx: Context) => this.related.getsecret.traverse((p) => p.permits.allow(ctx)) || this.related.hassecret.traverse((p) => p.permits.can_get(ctx)),
   }
 }
 
-class ServiceResource implements Namespace {
+class KubricksResource implements Namespace {
   related: {
     owner: User[]
-    k8s_instance: KubernetesResourceType[]
     kbrx_instance: KubricksResourceType[]
-    get: ResourcePolicy[]
-    watch: ResourcePolicy[]
-    apiaccess: (ResourcePolicy | Policy)[]
+    accessapi: (Policy | ResourcePolicy)[]
+    setsecret: (Policy | ResourcePolicy)[]
+    getsecret: (Policy | ResourcePolicy)[]
   }
   permits = {
-    // Kubernetes rule verbs
-    can_delete: (ctx: Context) => this.related.k8s_instance.traverse((i) => i.permits.can_delete(ctx)) || this.related.owner.includes(ctx.subject),
-    can_get: (ctx: Context) => this.related.k8s_instance.traverse((i) => i.permits.can_get(ctx)) || this.related.owner.includes(ctx.subject),
-    can_patch: (ctx: Context) => this.related.k8s_instance.traverse((i) => i.permits.can_patch(ctx)) || this.related.owner.includes(ctx.subject),
-    can_update: (ctx: Context) => this.related.k8s_instance.traverse((i) => i.permits.can_update(ctx)) || this.related.owner.includes(ctx.subject),
-    can_watch: (ctx: Context) => this.related.k8s_instance.traverse((i) => i.permits.can_watch(ctx)) || this.related.owner.includes(ctx.subject),
-    // Kubricks rule verbs
-    can_apiaccess: (ctx: Context) => this.related.kbrx_instance.traverse((i) => i.permits.can_apiaccess(ctx)) || this.related.apiaccess.traverse((p) => p.permits.allow(ctx)) || this.related.owner.includes(ctx.subject),
+    can_delete: (ctx: Context) => this.related.kbrx_instance.traverse((i) => i.permits.can_delete(ctx)) || this.related.owner.includes(ctx.subject),
+    can_get: (ctx: Context) => this.related.kbrx_instance.traverse((i) => i.permits.can_get(ctx)) || this.related.owner.includes(ctx.subject),
+    can_update: (ctx: Context) => this.related.kbrx_instance.traverse((i) => i.permits.can_update(ctx)) || this.related.owner.includes(ctx.subject),
+    can_accessapi: (ctx: Context) => this.related.kbrx_instance.traverse((i) => i.permits.can_accessapi(ctx)) || this.related.accessapi.traverse((p) => p.permits.allow(ctx)) || this.related.owner.includes(ctx.subject),
+    can_setsecret: (ctx: Context) => this.related.kbrx_instance.traverse((i) => i.permits.can_setsecret(ctx)) || this.related.setsecret.traverse((p) => p.permits.allow(ctx)) || this.related.owner.includes(ctx.subject),
+    can_getsecret: (ctx: Context) => this.related.kbrx_instance.traverse((i) => i.permits.can_getsecret(ctx)) || this.related.getsecret.traverse((p) => p.permits.allow(ctx)) || this.related.owner.includes(ctx.subject),
   }
 }
