@@ -149,7 +149,43 @@ var scenario_1 = []*rts.RelationTuple{
 		),
 	},
 
-	//-------- create  ---------
+	//-------- Create policies ---------
+	// policies bundle permissions that are granted to a role
+	
+	// Policy: AdminPolicy
+	{
+		Namespace: "Policy",
+		Object:    "AdminPolicy",
+		Relation:  "allow",
+		Subject: rts.NewSubjectSet(
+			"Role",
+			"Admin",
+			"",
+		),
+	},
+	// Policy: DevPolicy
+	{
+		Namespace: "Policy",
+		Object:    "DevPolicy",
+		Relation:  "allow",
+		Subject: rts.NewSubjectSet(
+			"Role",
+			"Dev",
+			"",
+		)
+	},
+
+	//-------- create resource types and implicitly create permissions ---------
+	// The resource types namespaces comprise all resources that are available in the system
+	// They act as classes of resources for which you can create permissions by attaching them to policies
+	// Any principal with a bound policy that has a permission for a certain resource type can perform the granted actions on all instances of resources of that type
+	// It's also the only place where it makes sense to define permission relations for the creation of resources
+
+	// KubernetesResourceType: Service
+	// All Kubernetes primitive types (and maybe by extension CRDs, not sure yet) should be defined in the KubernetesResourceType namespace
+	// For each action (rule verb) that is defined in the Kubernetes API for a resource type we create an according permission relation tuple
+
+	// create permissions for the `Service` Kubernetes resource type and bundle them in the `AdminPolicy`
 	{
 		Namespace: "KubernetesResourceType",
 		Object:    "Service",
@@ -200,6 +236,8 @@ var scenario_1 = []*rts.RelationTuple{
 			"",
 		),
 	},
+
+	// create certain narrow permissions for the `Service` Kubernetes resource type and bundle them in the `DevPolicy`
 	{
 		Namespace: "KubernetesResourceType",
 		Object:    "Service",
@@ -220,6 +258,8 @@ var scenario_1 = []*rts.RelationTuple{
 			"",
 		),
 	},
+	
+	// KubricksResourceType: MLFlow 
 	{
 		Namespace: "KubricksResourceType",
 		Object:    "MLFlow",
@@ -230,6 +270,8 @@ var scenario_1 = []*rts.RelationTuple{
 			"",
 		),
 	},
+
+
 	{
 		Namespace: "ServiceResource",
 		Object:    "MLFlowInstance",
