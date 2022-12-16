@@ -96,7 +96,7 @@ class KubricksResourceType implements Namespace {
     can_accessapi: (ctx: Context) => this.related.accessapi.traverse((p) => p.permits.allow(ctx)),
 
     // do things with the resources possible kubernetes dependencies without giving broader access to the resource itself
-    can_setsecret: (ctx: Context) => this.related.setsecret.traverse((p) => p.permits.allow(ctx)) || this.related.hassecret.traverse((p) => p.permits.can_delete(ctx) && p.permits.can_create(ctx)),
+    can_setsecret: (ctx: Context) => this.related.setsecret.traverse((p) => p.permits.allow(ctx)) || this.related.hassecret.traverse((p) => p.permits.can_delete(ctx)),
     can_getsecret: (ctx: Context) => this.related.getsecret.traverse((p) => p.permits.allow(ctx)) || this.related.hassecret.traverse((p) => p.permits.can_get(ctx)),
   }
 }
