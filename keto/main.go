@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	ketoclient "github.com/rauerhans/laborat-ory/keto/client"
+	ketocl "github.com/rauerhans/laborat-ory/keto/client"
 
 	rts "github.com/ory/keto/proto/ory/keto/relation_tuples/v1alpha2"
 )
 
 func main() {
 	//conn, err := grpc.Dial("127.0.0.1:4467", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	conn, err := ketoclient.GetWriteConn(context.TODO())
+	conn, err := ketocl.WriteConn(context.TODO())
 	if err != nil {
 		panic("Encountered error: " + err.Error())
 	}
