@@ -11,9 +11,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	rts "github.com/ory/keto/proto/ory/keto/relation_tuples/v1alpha2"
-
-	"github.com/rauerhans/laborat-ory/keto/client"
+	ketocl "github.com/rauerhans/laborat-ory/keto/client"
 )
 
 func TestOpl(t *testing.T) {
@@ -21,9 +19,7 @@ func TestOpl(t *testing.T) {
 	RunSpecs(t, "Opl Suite")
 }
 
-var wcl rts.WriteServiceClient
-var rcl rts.ReadServiceClient
-var ccl rts.CheckServiceClient
+var kcl *ketocl.GrpcClient
 
 var _ = BeforeSuite(func() {
 	err := godotenv.Load("../.env") // 👈 load .env file
@@ -38,25 +34,9 @@ var _ = BeforeSuite(func() {
 	GinkgoWriter.Printf("KETO_READ_REMOTE: %s\n", os.Getenv("KETO_READ_REMOTE"))
 	GinkgoWriter.Printf("KETO_WRITE_REMOTE: %s\n", os.Getenv("KETO_WRITE_REMOTE"))
 
-	conn, err := client.GetWriteConn(context.TODO())
+	conndetails := ketocl.NewConnectionDetailsFromEnv()
+	kcl, err = ketocl.NewGrpcClient(context.Background(), conndetails)
 	if err != nil {
 		panic("Encountered error: " + err.Error())
 	}
-
-	wcl = rts.NewWriteServiceClient(conn)
-
-	conn, err = client.GetReadConn(context.TODO())
-	if err != nil {
-		panic("Encountered error: " + err.Error())
-	}
-
-	rcl = rts.NewReadServiceClient(conn)
-
-	conn, err = client.GetReadConn(context.TODO())
-	if err != nil {
-		panic("Encountered error: " + err.Error())
-	}
-
-	ccl = rts.NewCheckServiceClient(conn)
-
 })
