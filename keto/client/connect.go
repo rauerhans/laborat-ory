@@ -83,7 +83,7 @@ func getAuthority() string {
 	return os.Getenv(EnvAuthority)
 }
 
-func NewConnectionDetails() ConnectionDetails {
+func NewConnectionDetailsFromEnv() ConnectionDetails {
 	return ConnectionDetails{
 		readRemote:           getRemote(EnvReadRemote, ReadRemoteDefault),
 		writeRemote:          getRemote(EnvWriteRemote, WriteRemoteDefault),
