@@ -151,7 +151,7 @@ var scenario_1 = []*rts.RelationTuple{
 
 	//-------- Create policies ---------
 	// policies bundle permissions that are granted to a role
-	
+
 	// Policy: AdminPolicy
 	{
 		Namespace: "Policy",
@@ -172,7 +172,7 @@ var scenario_1 = []*rts.RelationTuple{
 			"Role",
 			"Dev",
 			"",
-		)
+		),
 	},
 
 	//-------- create resource types and implicitly create permissions ---------
@@ -185,10 +185,11 @@ var scenario_1 = []*rts.RelationTuple{
 	// All Kubernetes primitive types (and maybe by extension CRDs, not sure yet) should be defined in the KubernetesResourceType namespace
 	// For each action (rule verb) that is defined in the Kubernetes API for a resource type we create an according permission relation tuple
 
-	// create permissions for the `Service` Kubernetes resource type and bundle them in the `AdminPolicy`
+	// create permissions for the `Secret` Kubernetes resource type and bundle them in the `AdminPolicy`
+	// this could be reconciled from existing Kubernetes roles
 	{
 		Namespace: "KubernetesResourceType",
-		Object:    "Service",
+		Object:    "Secret",
 		Relation:  "create",
 		Subject: rts.NewSubjectSet(
 			"Policy",
@@ -198,7 +199,7 @@ var scenario_1 = []*rts.RelationTuple{
 	},
 	{
 		Namespace: "KubernetesResourceType",
-		Object:    "Service",
+		Object:    "Secret",
 		Relation:  "delete",
 		Subject: rts.NewSubjectSet(
 			"Policy",
@@ -208,7 +209,7 @@ var scenario_1 = []*rts.RelationTuple{
 	},
 	{
 		Namespace: "KubernetesResourceType",
-		Object:    "Service",
+		Object:    "Secret",
 		Relation:  "get",
 		Subject: rts.NewSubjectSet(
 			"Policy",
@@ -218,18 +219,8 @@ var scenario_1 = []*rts.RelationTuple{
 	},
 	{
 		Namespace: "KubernetesResourceType",
-		Object:    "Service",
+		Object:    "Secret",
 		Relation:  "list",
-		Subject: rts.NewSubjectSet(
-			"Policy",
-			"AdminPolicy",
-			"",
-		),
-	},
-	{
-		Namespace: "KubernetesResourceType",
-		Object:    "Service",
-		Relation:  "update",
 		Subject: rts.NewSubjectSet(
 			"Policy",
 			"AdminPolicy",
@@ -237,20 +228,10 @@ var scenario_1 = []*rts.RelationTuple{
 		),
 	},
 
-	// create certain narrow permissions for the `Service` Kubernetes resource type and bundle them in the `DevPolicy`
+	// create certain narrow permissions for the `Secret` Kubernetes resource type and bundle them in the `DevPolicy`
 	{
 		Namespace: "KubernetesResourceType",
-		Object:    "Service",
-		Relation:  "get",
-		Subject: rts.NewSubjectSet(
-			"Policy",
-			"DevPolicy",
-			"",
-		),
-	},
-	{
-		Namespace: "KubernetesResourceType",
-		Object:    "Service",
+		Object:    "Secret",
 		Relation:  "list",
 		Subject: rts.NewSubjectSet(
 			"Policy",
@@ -258,8 +239,78 @@ var scenario_1 = []*rts.RelationTuple{
 			"",
 		),
 	},
-	
-	// KubricksResourceType: MLFlow 
+
+	// KubricksResourceType: MLFlow
+
+	// All Kubricks apps/plugins should be defined in the KubricksResourceType namespace
+	// TODO: We shall see if that makes sense or if we need to create a separate namespace for each app/plugin
+	// e.g. because we want to define permissions actions or individual http endpoints that don't exist on every app/plugin
+	// the `accessapi` shall stand in as a placeholder for all data plane access to the Kubricks app/plugin
+
+	// an MLFlow instance needs a secret to be able to access the object store (for example)
+	// if any user can create/delete Secrets in a project, they can also get/set the particular secret of an MLFlow instance
+	{
+		Namespace: "KubricksResourceType",
+		Object:    "MLFlow",
+		Relation:  "hassecret",
+		Subject: rts.NewSubjectSet(
+			"KubernetesResourceType",
+			"Secret",
+			"",
+		),
+	},
+
+	// admins can create, manipulate the instance, as well as access the MLFlow API
+	{
+		Namespace: "KubricksResourceType",
+		Object:    "MLFlow",
+		Relation:  "create",
+		Subject: rts.NewSubjectSet(
+			"Policy",
+			"AdminPolicy",
+			"",
+		),
+	},
+	{
+		Namespace: "KubricksResourceType",
+		Object:    "MLFlow",
+		Relation:  "delete",
+		Subject: rts.NewSubjectSet(
+			"Policy",
+			"AdminPolicy",
+			"",
+		),
+	},
+	{
+		Namespace: "KubricksResourceType",
+		Object:    "MLFlow",
+		Relation:  "get",
+		Subject: rts.NewSubjectSet(
+			"Policy",
+			"AdminPolicy",
+			"",
+		),
+	},
+	{
+		Namespace: "KubricksResourceType",
+		Object:    "MLFlow",
+		Relation:  "list",
+		Subject: rts.NewSubjectSet(
+			"Policy",
+			"AdminPolicy",
+			"",
+		),
+	},
+	{
+		Namespace: "KubricksResourceType",
+		Object:    "MLFlow",
+		Relation:  "update",
+		Subject: rts.NewSubjectSet(
+			"Policy",
+			"AdminPolicy",
+			"",
+		),
+	},
 	{
 		Namespace: "KubricksResourceType",
 		Object:    "MLFlow",
@@ -271,10 +322,54 @@ var scenario_1 = []*rts.RelationTuple{
 		),
 	},
 
-
+	// devs get info on any instance, as well as access to the MLFlow API, they also can get the secret of an instance, but not set it
 	{
-		Namespace: "ServiceResource",
-		Object:    "MLFlowInstance",
+		Namespace: "KubricksResourceType",
+		Object:    "MLFlow",
+		Relation:  "accessapi",
+		Subject: rts.NewSubjectSet(
+			"Policy",
+			"DevPolicy",
+			"",
+		),
+	},
+	{
+		Namespace: "KubricksResourceType",
+		Object:    "MLFlow",
+		Relation:  "list",
+		Subject: rts.NewSubjectSet(
+			"Policy",
+			"DevPolicy",
+			"",
+		),
+	},
+	{
+		Namespace: "KubricksResourceType",
+		Object:    "MLFlow",
+		Relation:  "get",
+		Subject: rts.NewSubjectSet(
+			"Policy",
+			"DevPolicy",
+			"",
+		),
+	},
+	{
+		Namespace: "KubricksResourceType",
+		Object:    "MLFlow",
+		Relation:  "getsecret",
+		Subject: rts.NewSubjectSet(
+			"KubernetesResourceType",
+			"Secret",
+			"",
+		),
+	},
+
+	// ServiceResourceType: MLFlowInstance
+
+	// Finally we create an actual instance of the KubricksResourceType: MLFlow
+	{
+		Namespace: "KubricksResource",
+		Object:    "ManhattanMLFlowInstance",
 		Relation:  "owner",
 		Subject: rts.NewSubjectSet(
 			"User",
@@ -283,12 +378,33 @@ var scenario_1 = []*rts.RelationTuple{
 		),
 	},
 	{
-		Namespace: "ServiceResource",
-		Object:    "MLFlowInstance",
-		Relation:  "owner",
+		Namespace: "KubricksResource",
+		Object:    "ManhattanMLFlowInstance",
+		Relation:  "kbrx_instance",
+		Subject: rts.NewSubjectSet(
+			"KubricksResourceType",
+			"MLFlow",
+			"",
+		),
+	},
+	// in addition to any principal of project Manhattan being able to access the MLFlow API, we also want to allow an external user Sophie to access the API
+	{
+		Namespace: "KubricksResource",
+		Object:    "ManhattanMLFlowInstance",
+		Relation:  "accessapi",
+		Subject: rts.NewSubjectSet(
+			"ResourcePolicy",
+			"ShareManhattanMLFlowAccess",
+			"",
+		),
+	},
+	{
+		Namespace: "ResourcePolicy",
+		Object:    "ManhattanMLFlowInstance",
+		Relation:  "trust",
 		Subject: rts.NewSubjectSet(
 			"User",
-			"Hans",
+			"Sophie",
 			"",
 		),
 	},
