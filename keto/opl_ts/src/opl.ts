@@ -75,6 +75,10 @@ class KubricksResourceType implements Namespace {
 
     accessapi: Policy[]
 
+    //TODO: evaluate if this is a good idea
+    // an MLFlow instance needs a secret to be able to access the object store (for example)
+    // if any user can create/delete Secrets in a project, they can also get/set the particular secret of an MLFlow instance
+    // at the same time with these relations, we can also allow users to get/set secrets of MLFlow instances without giving them permissions to create/delete secrets in the project 
     hassecret: KubernetesResourceType[]
     setsecret: Policy[]
     getsecret: Policy[]
