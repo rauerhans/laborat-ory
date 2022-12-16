@@ -5,6 +5,7 @@ package client
 
 import (
 	"context"
+	. "context"
 
 	rts "github.com/ory/keto/proto/ory/keto/relation_tuples/v1alpha2"
 	"google.golang.org/grpc"
@@ -14,28 +15,42 @@ import (
 type Client interface {
 	//TODO
 	//queryNamespaces()
-	transactTuples(ins []*rts.RelationTuple, del []*rts.RelationTuple)
-	createTuple(r *rts.RelationTuple) error
-	deleteTuple(r *rts.RelationTuple) error
-	deleteAllTuples(q *rts.RelationQuery) error
-	queryTuple(q *rts.RelationQuery, opts ...PaginationOptionSetter) (*rts.ListRelationTuplesResponse, error)
-	queryAllTuples(q *rts.RelationQuery, pagesize int) ([]*rts.RelationTuple, error)
-	check(r *rts.RelationTuple) (error, bool)
-	expand(r *rts.SubjectSet, depth int) (error, *rts.SubjectTree)
-	waitUntilLive()
+	TransactTuples(ins []*rts.RelationTuple, del []*rts.RelationTuple)
+	CreateTuple(r *rts.RelationTuple) error
+	DeleteTuple(r *rts.RelationTuple) error
+	DeleteAllTuples(q *rts.RelationQuery) error
+	QueryTuple(q *rts.RelationQuery, opts ...PaginationOptionSetter) (*rts.ListRelationTuplesResponse, error)
+	QueryAllTuples(q *rts.RelationQuery, pagesize int) ([]*rts.RelationTuple, error)
+	Check(r *rts.RelationTuple) (error, bool)
+	Expand(r *rts.SubjectSet, depth int) (error, *rts.SubjectTree)
+	WaitUntilLive()
 }
 
-type grpcClient struct {
-	connDetails ConnectionDetails
-	wc, rc, oc  *grpc.ClientConn
-	ctx         context.Context
+type GrpcClient struct {
+	ConnDetails ConnectionDetails
+	wc, rc      *grpc.ClientConn
+	ctx         Context
 }
 
-//func (g *grpcClient) queryNamespaces() {
-//	return
-//}
+func NewGrpcClient(ctx Context, cd ConnectionDetails) (*GrpcClient, error) {
+	grpcClient := &GrpcClient{
+		ConnDetails: cd,
+		ctx:         ctx,
+	}
+	if wc, err := cd.WriteConn(ctx); err != nil {
+		return nil, err
+	} else {
+		grpcClient.wc = wc
+	}
+	if rc, err := cd.ReadConn(ctx); err != nil {
+		return nil, err
+	} else {
+		grpcClient.rc = rc
+	}
+	return grpcClient, nil
+}
 
-func (g *grpcClient) transactTuples(ins []*rts.RelationTuple, del []*rts.RelationTuple) error {
+func (g *GrpcClient) TransactTuples(ctx Context, ins []*rts.RelationTuple, del []*rts.RelationTuple) error {
 	c := rts.NewWriteServiceClient(g.wc)
 
 	deltas := append(
@@ -43,23 +58,23 @@ func (g *grpcClient) transactTuples(ins []*rts.RelationTuple, del []*rts.Relatio
 		rts.RelationTupleToDeltas(del, rts.RelationTupleDelta_ACTION_DELETE)...,
 	)
 
-	_, err := c.TransactRelationTuples(g.ctx, &rts.TransactRelationTuplesRequest{
+	_, err := c.TransactRelationTuples(ctx, &rts.TransactRelationTuplesRequest{
 		RelationTupleDeltas: deltas,
 	})
 	return err
 }
 
-func (g *grpcClient) createTuple(r *rts.RelationTuple) error {
-	return g.transactTuples([]*rts.RelationTuple{r}, nil)
+func (g *GrpcClient) CreateTuple(ctx Context, r *rts.RelationTuple) error {
+	return g.TransactTuples(ctx, []*rts.RelationTuple{r}, nil)
 }
 
-func (g *grpcClient) deleteTuple(r *rts.RelationTuple) error {
-	return g.transactTuples(nil, []*rts.RelationTuple{r})
+func (g *GrpcClient) DeleteTuple(ctx Context, r *rts.RelationTuple) error {
+	return g.TransactTuples(ctx, nil, []*rts.RelationTuple{r})
 }
 
-func (g *grpcClient) deleteAllTuples(q *rts.RelationQuery) error {
+func (g *GrpcClient) DeleteAllTuples(ctx Context, q *rts.RelationQuery) error {
 	c := rts.NewWriteServiceClient(g.wc)
-	_, err := c.DeleteRelationTuples(g.ctx, &rts.DeleteRelationTuplesRequest{
+	_, err := c.DeleteRelationTuples(ctx, &rts.DeleteRelationTuplesRequest{
 		RelationQuery: q,
 	})
 	return err
@@ -95,10 +110,10 @@ func GetPaginationOptions(modifiers ...PaginationOptionSetter) *PaginationOption
 	return opts
 }
 
-func (g *grpcClient) queryTuple(q *rts.RelationQuery, opts ...PaginationOptionSetter) (*rts.ListRelationTuplesResponse, error) {
+func (g *GrpcClient) QueryTuple(ctx Context, q *rts.RelationQuery, opts ...PaginationOptionSetter) (*rts.ListRelationTuplesResponse, error) {
 	c := rts.NewReadServiceClient(g.rc)
 	pagination := GetPaginationOptions(opts...)
-	resp, err := c.ListRelationTuples(g.ctx, &rts.ListRelationTuplesRequest{
+	resp, err := c.ListRelationTuples(ctx, &rts.ListRelationTuplesRequest{
 		RelationQuery: q,
 		PageToken:     pagination.Token,
 		PageSize:      int32(pagination.Size),
@@ -106,42 +121,42 @@ func (g *grpcClient) queryTuple(q *rts.RelationQuery, opts ...PaginationOptionSe
 	return resp, err
 }
 
-func (g *grpcClient) queryAllTuples(q *rts.RelationQuery, pagesize int) ([]*rts.RelationTuple, error) {
+func (g *GrpcClient) QueryAllTuples(ctx Context, q *rts.RelationQuery, pagesize int) ([]*rts.RelationTuple, error) {
 	tuples := make([]*rts.RelationTuple, 0)
-	resp, err := g.queryTuple(q, WithSize(pagesize))
+	resp, err := g.QueryTuple(ctx, q, WithSize(pagesize))
 	for resp.NextPageToken != "" && err == nil {
-		resp, err = g.queryTuple(q, WithToken(resp.NextPageToken), WithSize(pagesize))
+		resp, err = g.QueryTuple(ctx, q, WithToken(resp.NextPageToken), WithSize(pagesize))
 		tuples = append(tuples, resp.RelationTuples...)
 	}
 	return tuples, err
 }
 
-func (g *grpcClient) check(r *rts.RelationTuple) (bool, error) {
+func (g *GrpcClient) Check(ctx Context, r *rts.RelationTuple) (bool, error) {
 	c := rts.NewCheckServiceClient(g.rc)
 
 	req := &rts.CheckRequest{
 		Tuple: r,
 	}
-	resp, err := c.Check(g.ctx, req)
+	resp, err := c.Check(ctx, req)
 
 	return resp.Allowed, err
 }
 
-func (g *grpcClient) expand(ss *rts.Subject, depth int) (*rts.SubjectTree, error) {
+func (g *GrpcClient) Expand(ctx Context, ss *rts.Subject, depth int) (*rts.SubjectTree, error) {
 	c := rts.NewExpandServiceClient(g.rc)
 
-	resp, err := c.Expand(g.ctx, &rts.ExpandRequest{
+	resp, err := c.Expand(ctx, &rts.ExpandRequest{
 		Subject:  ss,
 		MaxDepth: int32(depth),
 	})
 	return resp.Tree, err
 }
 
-//TODO not sure if this is the correct thing to do
-func (g *grpcClient) waitUntilLive() error {
+//TODO: not sure if this is the correct thing to do
+func (g *GrpcClient) WaitUntilLive(ctx Context) error {
 	c := grpcHealthV1.NewHealthClient(g.rc)
 
-	ctx, cancel := context.WithCancel(g.ctx)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	cl, err := c.Watch(ctx, &grpcHealthV1.HealthCheckRequest{})
