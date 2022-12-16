@@ -44,7 +44,7 @@ var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 			query := rts.RelationQuery{
 				Namespace: px.Ptr("Group"),
 				Object:    px.Ptr("AllUsers"),
-				Relation:  nil,
+				Relation:  px.Ptr("member"),
 				Subject:   nil,
 			}
 
@@ -54,29 +54,22 @@ var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 			}
 			client.PrintTableFromRelationTuples(respTuples, GinkgoWriter)
 		})
-		It("Hans can create S3Resource", func() {
-			//query := rts.RelationQuery{
-			//	Namespace: px.Ptr("Group"),
-			//	Object:    px.Ptr("AllUsers"),
-			//	Relation:  nil,
-			//	Subject:   nil,
-			//}
-			//resp, err := ccl.Check(context.Background(), &rts.CheckRequest{
-			//	Tuple: &rts.RelationTuple{
-			//		Namespace: "S3ResourceType",
-			//		Object:    "S3",
-			//		Relation:  ,
-			//		Subject:   sub,
-			//	},
-			//	MaxDepth: 7,
-			//})
-			//resp, err := rcl.ListRelationTuples(context.Background(), &rts.ListRelationTuplesRequest{
-			//	RelationQuery: &query,
-			//})
-			//if err != nil {
-			//	panic("Encountered error: " + err.Error())
-			//}
-			//client.PrintTableFromRelationTuples(resp.RelationTuples, GinkgoWriter)
+		It("Hans and David can act as principals of project Manhattan", func() {
+			query := rts.RelationTuple{
+				Namespace: "Role",
+				Object:    "Admin",
+				Relation:  "can_assume",
+				Subject: rts.NewSubjectSet(
+					"Group",
+					"Ops",
+					"",
+				),
+			}
+			ok, err := kcl.Check(context.Background(), &query)
+			if err != nil {
+				panic("Encountered error: " + err.Error())
+			}
+			GinkgoWriter.Printf("ok: %v", ok)
 		})
 	})
 })
