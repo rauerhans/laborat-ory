@@ -68,8 +68,16 @@ func (g *GrpcClient) CreateTuple(ctx Context, r *rts.RelationTuple) error {
 	return g.TransactTuples(ctx, []*rts.RelationTuple{r}, nil)
 }
 
+func (g *GrpcClient) CreateTuples(ctx Context, r []*rts.RelationTuple) error {
+	return g.TransactTuples(ctx, r, nil)
+}
+
 func (g *GrpcClient) DeleteTuple(ctx Context, r *rts.RelationTuple) error {
 	return g.TransactTuples(ctx, nil, []*rts.RelationTuple{r})
+}
+
+func (g *GrpcClient) DeleteTuples(ctx Context, r []*rts.RelationTuple) error {
+	return g.TransactTuples(ctx, nil, r)
 }
 
 func (g *GrpcClient) DeleteAllTuples(ctx Context, q *rts.RelationQuery) error {
