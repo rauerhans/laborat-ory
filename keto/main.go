@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log"
 
+	"github.com/joho/godotenv"
 	ketocl "github.com/rauerhans/laborat-ory/keto/client"
 
 	rts "github.com/ory/keto/proto/ory/keto/relation_tuples/v1alpha2"
@@ -11,12 +12,15 @@ import (
 
 func main() {
 	//conn, err := grpc.Dial("127.0.0.1:4467", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	conn, err := ketocl.WriteConn(context.TODO())
+	err := godotenv.Load("./.env") // 👈 load .env file
+	if err != nil {
+		log.Fatal(err)
+	}
+	conndetails := ketocl.NewConnectionDetailsFromEnv()
+	kcl, err := ketocl.NewGrpcClient(context.Background(), conndetails)
 	if err != nil {
 		panic("Encountered error: " + err.Error())
 	}
-
-	client := rts.NewWriteServiceClient(conn)
 
 	//directories:/photos#owner@maureen
 	//files:/photos/beach.jpg#owner@maureen
@@ -36,6 +40,9 @@ func main() {
 			Subject:   rts.NewSubjectID("hans"),
 		},
 	}
+
+	kcl.CreateTuples(context.Background(), tuples)
+
 	// should be subject set rewrite
 	// owners have access
 	//for _, o := range []struct{ n, o string }{
@@ -61,12 +68,4 @@ func main() {
 	//	})
 	//}
 
-	_, err = client.TransactRelationTuples(context.Background(), &rts.TransactRelationTuplesRequest{
-		RelationTupleDeltas: rts.RelationTupleToDeltas(tuples, rts.RelationTupleDelta_ACTION_INSERT),
-	})
-	if err != nil {
-		panic("Encountered error: " + err.Error())
-	}
-
-	fmt.Println("Successfully created tuples")
 }
