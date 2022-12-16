@@ -132,7 +132,8 @@ func (g *GrpcClient) QueryTuple(ctx Context, q *rts.RelationQuery, opts ...Pagin
 func (g *GrpcClient) QueryAllTuples(ctx Context, q *rts.RelationQuery, pagesize int) ([]*rts.RelationTuple, error) {
 	tuples := make([]*rts.RelationTuple, 0)
 	resp, err := g.QueryTuple(ctx, q, WithSize(pagesize))
-	for resp.NextPageToken != "" && err == nil {
+	tuples = append(tuples, resp.RelationTuples...)
+	for resp.NextPageToken != "" && err != nil {
 		resp, err = g.QueryTuple(ctx, q, WithToken(resp.NextPageToken), WithSize(pagesize))
 		tuples = append(tuples, resp.RelationTuples...)
 	}
