@@ -22,6 +22,7 @@ class Project implements Namespace {
   permits = {
     can_access: (ctx: Context) =>
       this.related.useraccess.includes(ctx.subject) ||
+      this.related.groupaccess.includes(ctx.subject) ||
       this.related.groupaccess.traverse((g) => g.permits.is_member(ctx))
   }
 }
