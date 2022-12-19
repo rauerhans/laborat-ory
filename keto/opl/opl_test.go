@@ -44,7 +44,7 @@ var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 			query := rts.RelationQuery{
 				Namespace: px.Ptr("Group"),
 				Object:    px.Ptr("AllUsers"),
-				Relation:  px.Ptr("member"),
+				Relation:  px.Ptr("usermember"),
 				Subject:   nil,
 			}
 
@@ -54,7 +54,7 @@ var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 			}
 			client.PrintTableFromRelationTuples(respTuples, GinkgoWriter)
 		})
-		It("Hans and David can act as principals of project Manhattan", func() {
+		It("Group `Ops` and by extension `Hans` and `David` can act as principals of project Manhattan", func() {
 			query := rts.RelationTuple{
 				Namespace: "Role",
 				Object:    "Admin",
@@ -69,7 +69,40 @@ var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 			if err != nil {
 				panic("Encountered error: " + err.Error())
 			}
-			GinkgoWriter.Printf("ok: %v", ok)
+			GinkgoWriter.Printf("Group `Ops` can assume role `Admin`: %v\n", ok)
+
+			query = rts.RelationTuple{
+				Namespace: "Role",
+				Object:    "Admin",
+				Relation:  "can_assume",
+				Subject: rts.NewSubjectSet(
+					"User",
+					"Hans",
+					"",
+				),
+			}
+			ok, err = kcl.Check(context.Background(), &query)
+			if err != nil {
+				panic("Encountered error: " + err.Error())
+			}
+			GinkgoWriter.Printf("User `Hans` can assume role `Admin`: %v\n", ok)
+
+			query = rts.RelationTuple{
+				Namespace: "Role",
+				Object:    "Admin",
+				Relation:  "can_assume",
+				Subject: rts.NewSubjectSet(
+					"User",
+					"David",
+					"",
+				),
+			}
+			ok, err = kcl.Check(context.Background(), &query)
+			if err != nil {
+				panic("Encountered error: " + err.Error())
+			}
+			GinkgoWriter.Printf("User `David` can assume role `Admin`: %v\n", ok)
+
 		})
 	})
 })
