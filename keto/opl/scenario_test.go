@@ -12,7 +12,7 @@ var scenario_1 = []*rts.RelationTuple{
 	{
 		Namespace: "Group",
 		Object:    "AllUsers",
-		Relation:  "member",
+		Relation:  "usermember",
 		Subject: rts.NewSubjectSet(
 			"User",
 			"Hans",
@@ -22,7 +22,7 @@ var scenario_1 = []*rts.RelationTuple{
 	{
 		Namespace: "Group",
 		Object:    "AllUsers",
-		Relation:  "member",
+		Relation:  "usermember",
 		Subject: rts.NewSubjectSet(
 			"User",
 			"David",
@@ -32,7 +32,7 @@ var scenario_1 = []*rts.RelationTuple{
 	{
 		Namespace: "Group",
 		Object:    "AllUsers",
-		Relation:  "member",
+		Relation:  "usermember",
 		Subject: rts.NewSubjectSet(
 			"User",
 			"Nico",
@@ -42,7 +42,7 @@ var scenario_1 = []*rts.RelationTuple{
 	{
 		Namespace: "Group",
 		Object:    "AllUsers",
-		Relation:  "member",
+		Relation:  "usermember",
 		Subject: rts.NewSubjectSet(
 			"User",
 			"Lianet",
@@ -52,7 +52,7 @@ var scenario_1 = []*rts.RelationTuple{
 	{
 		Namespace: "Group",
 		Object:    "AllUsers",
-		Relation:  "member",
+		Relation:  "usermember",
 		Subject: rts.NewSubjectSet(
 			"User",
 			"Sophie",
@@ -64,7 +64,7 @@ var scenario_1 = []*rts.RelationTuple{
 	{
 		Namespace: "Group",
 		Object:    "Ops",
-		Relation:  "member",
+		Relation:  "usermember",
 		Subject: rts.NewSubjectSet(
 			"User",
 			"Hans",
@@ -74,7 +74,7 @@ var scenario_1 = []*rts.RelationTuple{
 	{
 		Namespace: "Group",
 		Object:    "Ops",
-		Relation:  "member",
+		Relation:  "usermember",
 		Subject: rts.NewSubjectSet(
 			"User",
 			"David",
@@ -91,7 +91,7 @@ var scenario_1 = []*rts.RelationTuple{
 	{
 		Namespace: "Project",
 		Object:    "Manhattan",
-		Relation:  "access",
+		Relation:  "groupaccess",
 		Subject: rts.NewSubjectSet(
 			"Group",
 			"Ops",
@@ -102,7 +102,7 @@ var scenario_1 = []*rts.RelationTuple{
 	{
 		Namespace: "Project",
 		Object:    "Manhattan",
-		Relation:  "access",
+		Relation:  "useraccess",
 		Subject: rts.NewSubjectSet(
 			"User",
 			"Nico",
@@ -112,7 +112,7 @@ var scenario_1 = []*rts.RelationTuple{
 	{
 		Namespace: "Project",
 		Object:    "Manhattan",
-		Relation:  "access",
+		Relation:  "useraccess",
 		Subject: rts.NewSubjectSet(
 			"User",
 			"Lianet",

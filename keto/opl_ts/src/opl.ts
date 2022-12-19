@@ -16,12 +16,12 @@ class Group implements Namespace {
 
 class Project implements Namespace {
   related: {
-    directaccess: User[]
+    useraccess: User[]
     groupaccess: Group[]
   }
   permits = {
     can_access: (ctx: Context) =>
-      this.related.directaccess.includes(ctx.subject) ||
+      this.related.useraccess.includes(ctx.subject) ||
       this.related.groupaccess.traverse((g) => g.permits.is_member(ctx))
   }
 }
