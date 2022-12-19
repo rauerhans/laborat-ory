@@ -1,16 +1,28 @@
 import { Namespace, SubjectSet, Context } from "@ory/keto-namespace-types"
 
-class User implements Namespace { }
+class User implements Namespace {}
 
 class Group implements Namespace {
   related: {
-    member: (User | Group)[]
+    usermember: User[]
+    groupmember: Group[]
+  }
+  permits = {
+    is_member: (ctx: Context) =>
+      this.related.groupmember.traverse((m) => m.permits.is_member(ctx)) ||
+      this.related.usermember.includes(ctx.subject)
   }
 }
 
 class Project implements Namespace {
   related: {
-    access: (User | Group)[]
+    directaccess: User[]
+    groupaccess: Group[]
+  }
+  permits = {
+    can_access: (ctx: Context) =>
+      this.related.directaccess.includes(ctx.subject) ||
+      this.related.groupaccess.traverse((g) => g.permits.is_member(ctx))
   }
 }
 
@@ -19,7 +31,7 @@ class Role implements Namespace {
     principal: Project[]
   }
   permits = {
-    can_assume: (ctx: Context) => this.related.principal.traverse((p) => p.related.access.includes(ctx.subject))
+    can_assume: (ctx: Context) => this.related.principal.traverse((p) => p.permits.can_access(ctx))
   }
 }
 
