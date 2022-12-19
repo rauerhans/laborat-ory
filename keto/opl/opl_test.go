@@ -66,38 +66,46 @@ var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 			}
 			GinkgoWriter.Printf("Group `Ops` can assume role `Admin`: %v\n", ok)
 
-			query = rts.RelationTuple{
-				Namespace: "Role",
-				Object:    "Admin",
-				Relation:  "can_assume",
-				Subject: rts.NewSubjectSet(
-					"User",
-					"Hans",
-					"",
-				),
-			}
-			ok, err = kcl.Check(context.Background(), &query)
-			if err != nil {
-				panic("Encountered error: " + err.Error())
-			}
-			GinkgoWriter.Printf("User `Hans` can assume role `Admin`: %v\n", ok)
+			for _, user := range []string{"Hans", "David"} {
+				query = rts.RelationTuple{
+					Namespace: "Role",
+					Object:    "Admin",
+					Relation:  "can_assume",
+					Subject: rts.NewSubjectSet(
+						"User",
+						user,
+						"",
+					),
+				}
+				ok, err = kcl.Check(context.Background(), &query)
+				if err != nil {
+					panic("Encountered error: " + err.Error())
+				}
+				GinkgoWriter.Printf("User `%v` can assume role `Admin`: %v\n", user, ok)
 
-			query = rts.RelationTuple{
-				Namespace: "Role",
-				Object:    "Admin",
-				Relation:  "can_assume",
-				Subject: rts.NewSubjectSet(
-					"User",
-					"David",
-					"",
-				),
 			}
-			ok, err = kcl.Check(context.Background(), &query)
-			if err != nil {
-				panic("Encountered error: " + err.Error())
+		})
+		It("Groups `Ops` members can create, delete, get, list Kubernetes Secrets, because they can assume the Admin role", func() {
+			for _, user := range []string{"Hans", "David"} {
+				for _, action := range []string{"create", "delete", "get", "list"} {
+					query := rts.RelationTuple{
+						Namespace: "KubernetesResourceType",
+						Object:    "Secret",
+						// help me build a string format
+						Relation: "can_" + action,
+						Subject: rts.NewSubjectSet(
+							"User",
+							user,
+							"",
+						),
+					}
+					ok, err := kcl.Check(context.Background(), &query)
+					if err != nil {
+						panic("Encountered error: " + err.Error())
+					}
+					GinkgoWriter.Printf("User `%v` can %v Secret: %v\n", user, action, ok)
+				}
 			}
-			GinkgoWriter.Printf("User `David` can assume role `Admin`: %v\n", ok)
-
 		})
 	})
 })
