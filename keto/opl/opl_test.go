@@ -14,11 +14,6 @@ import (
 
 var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 	var _ = Describe("Scenario to cover most constellations.", func() {
-		//5 users: Hans, David, Nico, Lianet, Sophie
-		//2 groups: AllUsers, Ops
-		//1 project: Manhattan
-		//2 roles in project Manhattan: creator, editor
-		//2 policies:
 		BeforeEach(func() {
 			//set up database before each test
 			err := kcl.CreateTuples(context.Background(), scenario_1)
