@@ -156,7 +156,7 @@ var scenario_1 = []*rts.RelationTuple{
 	{
 		Namespace: "Policy",
 		Object:    "AdminPolicy",
-		Relation:  "allow",
+		Relation:  "trust",
 		Subject: rts.NewSubjectSet(
 			"Role",
 			"Admin",
@@ -167,7 +167,7 @@ var scenario_1 = []*rts.RelationTuple{
 	{
 		Namespace: "Policy",
 		Object:    "DevPolicy",
-		Relation:  "allow",
+		Relation:  "trust",
 		Subject: rts.NewSubjectSet(
 			"Role",
 			"Dev",
