@@ -38,10 +38,10 @@ class Role implements Namespace {
 
 class Policy implements Namespace {
   related: {
-    allow: Role[]
+    trust: Role[]
   }
   permits = {
-    allow: (ctx: Context) => this.related.allow.traverse((r) => r.permits.can_assume(ctx))
+    allow: (ctx: Context) => this.related.trust.traverse((r) => r.permits.can_assume(ctx))
   }
 }
 
