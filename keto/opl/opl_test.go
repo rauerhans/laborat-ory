@@ -125,5 +125,50 @@ var _ = Describe("Verify expected behaviour of the opl configuration.", func() {
 				}
 			}
 		})
+		It("Groups `Ops` members can create, delete, get, list Kubernetes Secrets, because they can assume the Admin role", func() {
+			for _, user := range []string{"Hans", "David"} {
+				for _, action := range []string{"create", "delete", "get", "list", "update", "accessapi"} {
+					query := rts.RelationTuple{
+						Namespace: "KubricksResourceType",
+						Object:    "MLFlow",
+						Relation:  "can_" + action,
+						Subject: rts.NewSubjectSet(
+							"User",
+							user,
+							"",
+						),
+					}
+					client.PrintTableFromRelationTuples([]*rts.RelationTuple{&query}, GinkgoWriter)
+					ok, err := kcl.Check(context.Background(), &query)
+					if err != nil {
+						panic("Encountered error: " + err.Error())
+					}
+					GinkgoWriter.Printf("User `%v` can_%v Secret: %v\n", user, action, ok)
+				}
+			}
+		})
+		It("Groups `Ops` members can create, delete, get, list Kubernetes Secrets, because they can assume the Admin role", func() {
+			for _, user := range []string{"Nico", "Lianet"} {
+				for _, action := range []string{"create", "delete", "get", "list", "update", "accessapi"} {
+					query := rts.RelationTuple{
+						Namespace: "KubricksResourceType",
+						Object:    "MLFlow",
+						Relation:  "can_" + action,
+						Subject: rts.NewSubjectSet(
+							"User",
+							user,
+							"",
+						),
+					}
+					client.PrintTableFromRelationTuples([]*rts.RelationTuple{&query}, GinkgoWriter)
+					ok, err := kcl.Check(context.Background(), &query)
+					if err != nil {
+						panic("Encountered error: " + err.Error())
+					}
+					GinkgoWriter.Printf("User `%v` can_%v Secret: %v\n", user, action, ok)
+				}
+			}
+		})
+
 	})
 })
